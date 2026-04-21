@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CryptoSignal AI</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@700;800;900&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#040810;color:#c8d8f0;font-family:'Space Mono',monospace;min-height:100vh}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:#1a3050}
+.card{background:linear-gradient(145deg,#08111e,#0c1928);border:1px solid #152030;border-radius:14px;padding:24px;margin-bottom:14px}
+.inp{background:#060f1a;border:1px solid #152030;border-radius:8px;color:#c8d8f0;font-family:inherit;font-size:12px;padding:11px 14px;width:100%;outline:none;transition:border .2s}
+.inp:focus{border-color:#0080cc}.inp::placeholder{color:#1e3a50}
+.btn{cursor:pointer;border:none;border-radius:8px;font-family:inherit;font-size:12px;font-weight:700;padding:11px 20px;transition:all .2s;letter-spacing:.5px}
+.btn-p{background:linear-gradient(135deg,#004a99,#0080cc);color:#fff}
+.btn-p:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 20px #0080cc33}
+.btn-s{background:#0a1828;color:#6090b0;border:1px solid #152030}
+.btn-s:hover{background:#0d2035}
+.btn-d{background:#1a0a10;color:#cc2244;border:1px solid #2a1020}
+.btn-w{background:#0a1a0a;color:#00cc66;border:1px solid #0a2a1a}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none!important}
+.tabs{display:flex;gap:2px;background:#060f1a;border-radius:9px;padding:3px;margin-bottom:20px}
+.tab{cursor:pointer;flex:1;padding:9px 4px;border-radius:7px;font-size:11px;font-weight:700;border:none;background:transparent;color:#3a6080;letter-spacing:.3px;transition:all .2s;font-family:inherit}
+.tab.on{background:#0c1f30;color:#00aaff}
+.lbl{font-size:10px;color:#2a5070;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.stat{background:#060f1a;border:1px solid #0e1f2e;border-radius:8px;padding:14px;text-align:center}
+.msg{border-radius:8px;padding:11px 14px;font-size:12px;margin-bottom:14px;display:none}
+.msg.show{display:block}
+.msg-ok{background:#001a0a;border:1px solid #003a20;color:#00cc66}
+.msg-err{background:#1a0008;border:1px solid #3a0020;color:#ff4466}
+.msg-info{background:#001020;border:1px solid #002244;color:#00aaff}
+.sig-card{border-radius:12px;padding:18px;border:1px solid #152030;background:#06101a;margin-bottom:12px;position:relative;overflow:hidden}
+.sig-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#004a99,#00aaff,#004a99)}
+.badge{display:inline-block;padding:3px 10px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.5px}
+.badge-l{background:#001a0a;color:#00cc66;border:1px solid #003320}
+.badge-s{background:#1a0008;color:#ff4466;border:1px solid #330020}
+.prog{height:4px;border-radius:2px;background:#0a1a28;overflow:hidden;margin-bottom:14px}
+.prog-bar{height:100%;border-radius:2px;background:linear-gradient(90deg,#004a99,#00aaff);transition:width .5s}
+.freq-opt{cursor:pointer;padding:7px 12px;border-radius:6px;font-size:11px;border:1px solid #152030;background:#0a1828;color:#6090b0;transition:all .15s;font-family:inherit}
+.freq-opt.on{background:#0c1f30;color:#00aaff;border-color:#0055aa}
+.section{display:none}.section.on{display:block}
+.scanline{position:fixed;top:-2px;left:0;width:100%;height:2px;background:linear-gradient(90deg,transparent,#00aaff,transparent);animation:scan 5s ease-in-out infinite;pointer-events:none;z-index:999}
+@keyframes scan{0%{top:-2px;opacity:0}30%{opacity:.6}70%{opacity:.6}100%{top:100%;opacity:0}}
+.pulse{animation:pulse 2s infinite}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.glow{text-shadow:0 0 20px #00aaff66}
+.share-card{border:1px solid #0a3a6a;border-radius:12px;background:linear-gradient(145deg,#040c18,#071220);padding:24px;text-align:center;margin-bottom:14px}
+.step{display:flex;gap:14px;align-items:flex-start;padding:14px 0;border-bottom:1px solid #060f1a}
+.step:last-child{border-bottom:none}
+.step-n{font-family:'Syne',sans-serif;font-size:28px;font-weight:900;color:#0a2a40;min-width:44px}
+.tbl{width:100%;border-collapse:collapse;font-size:11px}
+.tbl th{text-align:left;padding:8px 10px;color:#2a5070;border-bottom:1px solid #0e1f2e;font-weight:700}
+.tbl td{padding:8px 10px;border-bottom:1px solid #060f1a;color:#8aaccc}
+.tbl tr:hover td{background:#080f1a}
+textarea.inp{resize:none}
+</style>
+</head>
+<body>
+<div class="scanline"></div>
+
+<!-- Header -->
+<div style="border-bottom:1px solid #0e1f2e;padding:18px 20px;display:flex;align-items:center;gap:14px">
+  <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:900;color:#00aaff" class="glow">📡 CryptoSignal AI</div>
+  <div style="font-size:10px;color:#1e4060;letter-spacing:2px;margin-top:2px">POWERED BY GEMINI</div>
+  <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+    <div class="pulse" style="width:7px;height:7px;border-radius:50%;background:#00cc66"></div>
+    <span style="font-size:10px;color:#1e4060">LIVE</span>
+  </div>
+</div>
+
+<div style="max-width:700px;margin:0 auto;padding:24px 16px">
+
+  <!-- Toast -->
+  <div id="toast" class="msg"></div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab on" onclick="showTab('register')">➕ 訂閱</button>
+    <button class="tab" onclick="showTab('signals')">📊 信號</button>
+    <button class="tab" onclick="showTab('manage')">⚙️ 管理</button>
+    <button class="tab" onclick="showTab('share')">🔗 分享</button>
+    <button class="tab" onclick="showTab('admin')">🔐 Admin</button>
+  </div>
+
+  <!-- ── Register ── -->
+  <div id="tab-register" class="section on">
+    <div class="card">
+      <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:900;margin-bottom:20px">開始接收 AI 信號</div>
+
+      <div style="margin-bottom:16px">
+        <div class="lbl">Telegram Bot Token</div>
+        <input class="inp" id="tg-token" placeholder="1234567890:ABCDefghijk...">
+        <div style="font-size:10px;color:#1e4060;margin-top:5px">→ 向 @BotFather 輸入 /newbot 取得</div>
+      </div>
+
+      <div style="margin-bottom:16px">
+        <div class="lbl">你的 Telegram Chat ID</div>
+        <input class="inp" id="tg-chat-id" placeholder="123456789">
+        <div style="font-size:10px;color:#1e4060;margin-top:5px">→ 向 @userinfobot 輸入 /start 取得</div>
+      </div>
+
+      <div style="margin-bottom:16px">
+        <div class="lbl">暱稱（選填）</div>
+        <input class="inp" id="nickname" placeholder="我的帳號">
+      </div>
+
+      <div style="margin-bottom:22px">
+        <div class="lbl">推播頻率</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px" id="freq-opts">
+          <button class="freq-opt on" data-val="4">每4小時</button>
+          <button class="freq-opt" data-val="8">每8小時</button>
+          <button class="freq-opt" data-val="12">每12小時</button>
+          <button class="freq-opt" data-val="24">每天</button>
+          <button class="freq-opt" data-val="48">每2天</button>
+          <button class="freq-opt" data-val="168">每週</button>
+        </div>
+      </div>
+
+      <button class="btn btn-p" onclick="doRegister()" style="width:100%;font-size:13px" id="btn-register">
+        📡 開始訂閱 AI 報單
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Signals ── -->
+  <div id="tab-signals" class="section">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:900">熱門信號</div>
+        <div style="font-size:10px;color:#1e4060;margin-top:3px" id="sig-updated"></div>
+      </div>
+      <button class="btn btn-s" onclick="loadSignals()" style="font-size:11px">🔄 刷新</button>
+    </div>
+    <div id="signals-container">
+      <div class="card" style="text-align:center;color:#1e4060;padding:40px">⏳ 載入信號中...</div>
+    </div>
+  </div>
+
+  <!-- ── Manage ── -->
+  <div id="tab-manage" class="section">
+    <div id="manage-content">
+      <div class="card" style="text-align:center;color:#1e4060;padding:40px">請先到「訂閱」完成設定</div>
+    </div>
+  </div>
+
+  <!-- ── Share ── -->
+  <div id="tab-share" class="section">
+    <div class="share-card">
+      <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:900;margin-bottom:4px">分享給朋友</div>
+      <div style="font-size:11px;color:#2a5070;margin-bottom:20px">掃描 QR Code 或複製連結</div>
+      <img id="qr-img" src="" alt="QR" style="border-radius:8px;border:2px solid #0a3a6a;margin-bottom:16px;width:180px;height:180px">
+      <div id="share-url" style="background:#040c18;border:1px solid #0a3a6a;border-radius:6px;padding:10px 14px;font-size:11px;color:#00aaff;word-break:break-all;margin-bottom:14px"></div>
+      <button class="btn btn-p" onclick="copyUrl()" style="width:100%">📋 複製連結</button>
+    </div>
+    <div class="card">
+      <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:900;margin-bottom:14px">🚀 3步驟開始</div>
+      <div class="step">
+        <div class="step-n">01</div>
+        <div>
+          <div style="font-weight:700;color:#00aaff;margin-bottom:6px;font-size:13px">建立 TG Bot</div>
+          <div style="font-size:12px;color:#4a7090;line-height:1.7">搜尋 @BotFather → 輸入 /newbot → 複製 API Token</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-n">02</div>
+        <div>
+          <div style="font-weight:700;color:#00aaff;margin-bottom:6px;font-size:13px">取得 Chat ID</div>
+          <div style="font-size:12px;color:#4a7090;line-height:1.7">搜尋 @userinfobot → 輸入 /start → 複製 Id 欄位數字</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-n">03</div>
+        <div>
+          <div style="font-weight:700;color:#00aaff;margin-bottom:6px;font-size:13px">啟動 & 訂閱</div>
+          <div style="font-size:12px;color:#4a7090;line-height:1.7">先到 TG 找你的 Bot 發 /start，再回來填入資料即可 🎉</div>
+        </div>
+      </div>
+    </div>
+    <div style="padding:14px;border:1px solid #0a2030;border-radius:8px;font-size:11px;color:#1e4060;line-height:1.8">
+      ⚠️ 此服務僅供資訊參考，不構成投資建議。加密貨幣投資具高度風險，請謹慎評估。
+    </div>
+  </div>
+
+  <!-- ── Admin ── -->
+  <div id="tab-admin" class="section">
+    <div id="admin-login" class="card">
+      <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:900;margin-bottom:16px">🔐 管理員登入</div>
+      <div style="margin-bottom:12px">
+        <div class="lbl">Admin 密碼</div>
+        <input class="inp" id="admin-pw" type="password" placeholder="輸入 ADMIN_TOKEN" onkeydown="if(event.key==='Enter')adminLogin()">
+      </div>
+      <button class="btn btn-p" onclick="adminLogin()" style="width:100%">登入</button>
+    </div>
+    <div id="admin-panel" style="display:none">
+      <!-- Stats -->
+      <div class="card">
+        <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:900;margin-bottom:14px">📊 系統統計</div>
+        <div class="grid3" id="admin-stats-grid">
+          <div class="stat"><div class="lbl">總用戶</div><div id="stat-total" style="color:#00aaff;font-family:'Syne',sans-serif;font-size:22px;font-weight:900">-</div></div>
+          <div class="stat"><div class="lbl">活躍中</div><div id="stat-active" style="color:#00cc66;font-family:'Syne',sans-serif;font-size:22px;font-weight:900">-</div></div>
+          <div class="stat"><div class="lbl">24h推播</div><div id="stat-logs" style="color:#ffaa00;font-family:'Syne',sans-serif;font-size:22px;font-weight:900">-</div></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="btn btn-s" onclick="fetchAdminData()" style="flex:1">🔄 刷新</button>
+          <button class="btn btn-w" onclick="triggerScan()" style="flex:1">🔍 手動掃描</button>
+        </div>
+      </div>
+      <!-- Broadcast -->
+      <div class="card">
+        <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:900;margin-bottom:12px">📢 全體廣播</div>
+        <textarea class="inp" id="broadcast-msg" rows="3" placeholder="輸入要廣播給所有用戶的訊息..." style="margin-bottom:10px"></textarea>
+        <button class="btn btn-p" onclick="sendBroadcast()" style="width:100%" id="btn-broadcast">📤 發送給所有用戶</button>
+      </div>
+      <!-- Users -->
+      <div class="card">
+        <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:900;margin-bottom:14px">👥 用戶列表</div>
+        <div style="overflow-x:auto">
+          <table class="tbl">
+            <thead><tr><th>ID</th><th>暱稱</th><th>頻率</th><th>上次推播</th><th>狀態</th><th>操作</th></tr></thead>
+            <tbody id="users-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────────
+const API = '';  // Same origin - Flask serves this file
+let selectedFreq = 4;
+let currentUid = localStorage.getItem('cs_uid') || '';
+let adminPw = '';
+
+// ── Init ──────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  // Freq buttons
+  document.querySelectorAll('#freq-opts .freq-opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#freq-opts .freq-opt').forEach(b => b.classList.remove('on'));
+      btn.classList.add('on');
+      selectedFreq = parseInt(btn.dataset.val);
+    });
+  });
+
+  // Share page
+  const url = window.location.origin;
+  document.getElementById('share-url').textContent = url;
+  document.getElementById('qr-img').src =
+    `https://api.qrserver.com/v1/create-qr-code/?size=180x180&color=00aaff&bgcolor=040810&data=${encodeURIComponent(url)}`;
+
+  if (currentUid) loadManage();
+  loadSignals();
+});
+
+// ── Toast ─────────────────────────────────────────────────
+function toast(text, type='ok') {
+  const el = document.getElementById('toast');
+  el.className = `msg msg-${type} show`;
+  el.textContent = text;
+  setTimeout(() => { el.className = 'msg'; }, 4500);
+}
+
+// ── Tabs ──────────────────────────────────────────────────
+function showTab(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  document.getElementById('tab-' + name).classList.add('on');
+  event.currentTarget.classList.add('on');
+  if (name === 'signals') loadSignals();
+  if (name === 'manage') loadManage();
+}
+
+// ── Format ────────────────────────────────────────────────
+function fmt(n) {
+  if (!n) return '0';
+  if (n < 1) return Number(n).toFixed(4);
+  if (n >= 1e9) return (n/1e9).toFixed(2) + 'B';
+  if (n >= 1e6) return (n/1e6).toFixed(0) + 'M';
+  return Number(n).toFixed(2);
+}
+function confColor(c) { return c >= 80 ? '#00cc66' : c >= 65 ? '#00aaff' : '#ffaa00'; }
+
+// ── Register ──────────────────────────────────────────────
+async function doRegister() {
+  const tok = document.getElementById('tg-token').value.trim();
+  const cid = document.getElementById('tg-chat-id').value.trim();
+  const nick = document.getElementById('nickname').value.trim();
+  if (!tok || !cid) return toast('請填入 TG Bot Token 和 Chat ID', 'err');
+
+  const btn = document.getElementById('btn-register');
+  btn.disabled = true; btn.textContent = '⏳ 驗證中...';
+
+  try {
+    const r = await fetch(`${API}/api/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tg_token: tok, tg_chat_id: cid, frequency_hours: selectedFreq, nickname: nick })
+    });
+    const d = await r.json();
+    if (r.ok) {
+      currentUid = d.user_id;
+      localStorage.setItem('cs_uid', currentUid);
+      toast(`✅ 訂閱成功！Bot @${d.bot} 已啟動`);
+      document.querySelectorAll('.tab')[2].click(); // Go to manage
+    } else {
+      toast(d.error || '訂閱失敗', 'err');
+    }
+  } catch { toast('連線錯誤，請稍後再試', 'err'); }
+
+  btn.disabled = false; btn.textContent = '📡 開始訂閱 AI 報單';
+}
+
+// ── Signals ───────────────────────────────────────────────
+async function loadSignals() {
+  try {
+    const r = await fetch(`${API}/api/signals`);
+    if (!r.ok) return;
+    const d = await r.json();
+    const sigs = d.signals || [];
+
+    if (d.updated) {
+      document.getElementById('sig-updated').textContent =
+        '更新：' + new Date(d.updated).toLocaleString('zh-TW');
+    }
+
+    const container = document.getElementById('signals-container');
+    if (!sigs.length) {
+      container.innerHTML = '<div class="card" style="text-align:center;color:#1e4060;padding:40px">⏳ 信號掃描中，請稍後刷新...</div>';
+      return;
+    }
+
+    container.innerHTML = sigs.map(sig => renderSignal(sig)).join('');
+  } catch (e) {
+    document.getElementById('signals-container').innerHTML =
+      '<div class="card" style="text-align:center;color:#ff4466;padding:40px">❌ 載入失敗，請刷新</div>';
+  }
+}
+
+function renderSignal(sig) {
+  const isLong = sig.direction === 'LONG';
+  const p = sig.price;
+  const tags = [
+    { l: `RSI ${sig.rsi}`, ok: sig.rsi < 70 && sig.rsi > 30 },
+    { l: `資金費率 ${Number(sig.funding_rate).toFixed(3)}%`, ok: Math.abs(sig.funding_rate) < 0.05 },
+    { l: `OI ${sig.oi_change_4h > 0 ? '+' : ''}${Number(sig.oi_change_4h).toFixed(1)}%`, ok: sig.oi_change_4h > 0 },
+    { l: `多空比 ${sig.ls_ratio}`, ok: true },
+    ...(sig.social_trending ? [{ l: `🔥 趨勢 #${sig.social_rank}`, ok: true }] : []),
+  ];
+
+  return `
+  <div class="sig-card">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:900">${sig.coin}USDT</div>
+        <div style="font-size:11px;color:#3a6080;margin-top:2px">
+          $${fmt(p)} &nbsp;
+          <span style="color:${sig.price_change_24h >= 0 ? '#00cc66' : '#ff4466'}">
+            ${sig.price_change_24h >= 0 ? '+' : ''}${Number(sig.price_change_24h).toFixed(2)}%
+          </span>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <span class="badge ${isLong ? 'badge-l' : 'badge-s'}">${isLong ? '⬆ LONG' : '⬇ SHORT'}</span>
+        <div style="margin-top:6px;font-size:11px;color:${confColor(sig.confidence)};font-weight:700">信心 ${sig.confidence}%</div>
+      </div>
+    </div>
+    <div class="prog"><div class="prog-bar" style="width:${sig.confidence}%"></div></div>
+    <div class="grid3" style="margin-bottom:12px">
+      <div class="stat"><div class="lbl">TP1 +2.5%</div><div style="color:#00cc66;font-size:11px;font-weight:700">$${fmt(sig.tp1)}</div></div>
+      <div class="stat"><div class="lbl">TP2 +5%</div><div style="color:#00cc66;font-size:11px;font-weight:700">$${fmt(sig.tp2)}</div></div>
+      <div class="stat"><div class="lbl">TP3 +8%</div><div style="color:#00cc66;font-size:11px;font-weight:700">$${fmt(sig.tp3)}</div></div>
+    </div>
+    <div class="grid3">
+      <div class="stat"><div class="lbl">止損 -3%</div><div style="color:#ff4466;font-size:11px;font-weight:700">$${fmt(sig.sl)}</div></div>
+      <div class="stat"><div class="lbl">建議槓桿</div><div style="color:#00aaff;font-size:13px;font-weight:700">${sig.leverage}x</div></div>
+      <div class="stat"><div class="lbl">24h量</div><div style="color:#8aaccc;font-size:11px">$${fmt(sig.volume_24h)}</div></div>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+      ${tags.map(t => `<span style="font-size:10px;padding:3px 8px;border-radius:4px;background:#060f1a;border:1px solid ${t.ok?'#0a2a1a':'#2a0a0a'};color:${t.ok?'#00cc66':'#ff4466'}">${t.l}</span>`).join('')}
+    </div>
+  </div>`;
+}
+
+// ── Manage ────────────────────────────────────────────────
+async function loadManage() {
+  if (!currentUid) return;
+  try {
+    const r = await fetch(`${API}/api/status/${currentUid}`);
+    if (!r.ok) return;
+    const u = await r.json();
+    renderManage(u);
+  } catch {}
+}
+
+function renderManage(u) {
+  const lastSent = u.last_sent ? new Date(u.last_sent).toLocaleString('zh-TW') : '尚未推播';
+  const nextSend = u.next_send ? new Date(u.next_send).toLocaleString('zh-TW') : '排程中';
+
+  const freqBtns = [4,8,12,24,48,168].map(v =>
+    `<button class="freq-opt ${v===u.frequency_hours?'on':''}" data-val="${v}" onclick="selectManageFreq(this,${v})">${
+      v===4?'每4小時':v===8?'每8小時':v===12?'每12小時':v===24?'每天':v===48?'每2天':'每週'
+    }</button>`
+  ).join('');
+
+  document.getElementById('manage-content').innerHTML = `
+    <div class="card">
+      <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:900;margin-bottom:14px">📊 訂閱狀態</div>
+      <div class="grid2" style="margin-bottom:14px">
+        <div class="stat"><div class="lbl">狀態</div><div style="color:${u.active?'#00cc66':'#ff4466'};font-weight:700;font-size:13px">${u.active?'✅ 啟用':'⏸ 暫停'}</div></div>
+        <div class="stat"><div class="lbl">頻率</div><div style="color:#00aaff;font-weight:700">每 ${u.frequency_hours}h</div></div>
+        <div class="stat"><div class="lbl">上次推播</div><div style="font-size:10px;color:#6090b0">${lastSent}</div></div>
+        <div class="stat"><div class="lbl">下次推播</div><div style="font-size:10px;color:#6090b0">${nextSend}</div></div>
+      </div>
+      <button class="btn btn-s" onclick="sendTest()" id="btn-test" style="width:100%">🧪 立即發送測試報單</button>
+    </div>
+    <div class="card">
+      <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:900;margin-bottom:14px">⚙️ 更新頻率</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px" id="manage-freq">${freqBtns}</div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-p" onclick="doUpdate()" style="flex:1">💾 儲存</button>
+        <button class="btn btn-d" onclick="doUnsub()">🗑 取消訂閱</button>
+      </div>
+    </div>
+    <div style="font-size:10px;color:#0e2030;text-align:center">User ID: ${currentUid}</div>`;
+}
+
+let manageFreq = 4;
+function selectManageFreq(el, val) {
+  document.querySelectorAll('#manage-freq .freq-opt').forEach(b => b.classList.remove('on'));
+  el.classList.add('on');
+  manageFreq = val;
+}
+
+async function sendTest() {
+  const btn = document.getElementById('btn-test');
+  btn.disabled = true; btn.textContent = '⏳ 生成中（約30秒）...';
+  toast('⏳ 生成報單中，請稍候...', 'info');
+  try {
+    const r = await fetch(`${API}/api/test/${currentUid}`, { method: 'POST' });
+    const d = await r.json();
+    d.success ? toast('✅ 測試報單已發送到 TG！') : toast('發送失敗：'+d.error, 'err');
+  } catch { toast('連線錯誤', 'err'); }
+  btn.disabled = false; btn.textContent = '🧪 立即發送測試報單';
+}
+
+async function doUpdate() {
+  try {
+    const r = await fetch(`${API}/api/update/${currentUid}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ frequency_hours: manageFreq })
+    });
+    r.ok ? toast('✅ 設定已更新') : toast('更新失敗', 'err');
+    loadManage();
+  } catch { toast('連線錯誤', 'err'); }
+}
+
+async function doUnsub() {
+  if (!confirm('確定要取消訂閱嗎？')) return;
+  await fetch(`${API}/api/unsubscribe/${currentUid}`, { method: 'DELETE' });
+  localStorage.removeItem('cs_uid');
+  currentUid = '';
+  toast('已取消訂閱');
+  document.querySelectorAll('.tab')[0].click();
+}
+
+// ── Share ──────────────────────────────────────────────────
+function copyUrl() {
+  const url = window.location.origin;
+  navigator.clipboard?.writeText(url).then(() => toast('✅ 連結已複製'));
+}
+
+// ── Admin ─────────────────────────────────────────────────
+async function adminLogin() {
+  adminPw = document.getElementById('admin-pw').value;
+  const r = await fetch(`${API}/api/admin/stats`, { headers: { 'X-Admin-Token': adminPw } });
+  if (r.ok) {
+    document.getElementById('admin-login').style.display = 'none';
+    document.getElementById('admin-panel').style.display = 'block';
+    fetchAdminData();
+  } else {
+    toast('密碼錯誤', 'err');
+  }
+}
+
+async function fetchAdminData() {
+  const h = { 'X-Admin-Token': adminPw };
+  try {
+    const [sr, ur] = await Promise.all([
+      fetch(`${API}/api/admin/stats`, { headers: h }),
+      fetch(`${API}/api/admin/users`, { headers: h }),
+    ]);
+    if (sr.ok) {
+      const s = await sr.json();
+      document.getElementById('stat-total').textContent = s.total;
+      document.getElementById('stat-active').textContent = s.active;
+      document.getElementById('stat-logs').textContent = s.signals_24h;
+    }
+    if (ur.ok) {
+      const u = await ur.json();
+      renderUsersTable(u.users || []);
+    }
+  } catch {}
+}
+
+function renderUsersTable(users) {
+  document.getElementById('users-tbody').innerHTML = users.map(u => `
+    <tr>
+      <td style="font-family:monospace;font-size:10px">${u.id}</td>
+      <td>${u.nickname || '-'}</td>
+      <td>${u.frequency_hours}h</td>
+      <td style="font-size:10px">${u.last_sent ? new Date(u.last_sent).toLocaleDateString('zh-TW') : '-'}</td>
+      <td><span class="badge ${u.active?'badge-l':'badge-s'}">${u.active?'ON':'OFF'}</span></td>
+      <td><button class="btn btn-s" onclick="toggleUser('${u.id}')" style="font-size:10px;padding:4px 10px">${u.active?'停用':'啟用'}</button></td>
+    </tr>`).join('');
+}
+
+async function toggleUser(id) {
+  await fetch(`${API}/api/admin/toggle/${id}`, { method:'POST', headers:{'X-Admin-Token':adminPw} });
+  fetchAdminData();
+}
+
+async function sendBroadcast() {
+  const msg = document.getElementById('broadcast-msg').value.trim();
+  if (!msg) return;
+  const btn = document.getElementById('btn-broadcast');
+  btn.disabled = true; btn.textContent = '⏳ 發送中...';
+  const r = await fetch(`${API}/api/admin/broadcast`, {
+    method:'POST', headers:{'Content-Type':'application/json','X-Admin-Token':adminPw},
+    body: JSON.stringify({ message: msg })
+  });
+  const d = await r.json();
+  toast(`✅ 已發送給 ${d.sent} 個用戶`);
+  document.getElementById('broadcast-msg').value = '';
+  btn.disabled = false; btn.textContent = '📤 發送給所有用戶';
+}
+
+async function triggerScan() {
+  await fetch(`${API}/api/admin/scan`, { method:'POST', headers:{'X-Admin-Token':adminPw} });
+  toast('🔍 掃描已啟動，約3-5分鐘完成', 'info');
+}
+</script>
+</body>
+</html>

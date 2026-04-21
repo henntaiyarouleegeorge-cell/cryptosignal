@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: cryptosignal-bot
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements_v2.txt && mkdir -p static && cp index.html static/
+    startCommand: gunicorn app_v2:app --workers 1 --timeout 120 --bind 0.0.0.0:$PORT
+    disk:
+      name: data
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: MASTER_KEY
+        generateValue: true
+      - key: ADMIN_TOKEN
+        generateValue: true
+      - key: DB_PATH
+        value: /data/users.db
